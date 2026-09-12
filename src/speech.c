@@ -152,8 +152,60 @@ void GAXSpeech_internal5(s16* xMc, s16 mant, s16 exp, s16* xMp) {
     
 }
 
-void GAXSpeech_internal6() {
-	
+// void GAXSpeech_internal6
+// https://decomp.me/scratch/ncC8W - Warm Mosquito (anon)
+// accuracy -> 97.62%
+
+static inline void APCM_quantization_xmaxc_to_exp_mant(s16 xmaxc,
+                                                       s16* exp_out,
+                                                       s16* mant_out) {
+    s16 exp = 0;
+    s16 mant;
+
+    if (xmaxc > 15) exp = SASR(xmaxc, 3) - 1;
+    mant = xmaxc - (exp << 3);
+
+    if (mant == 0) {
+        exp  = -4;
+        mant = 7;
+    } else {
+        while (mant <= 7) {
+            mant = (mant << 1) | 1;
+            exp--;
+        }
+        mant -= 8;
+    }
+
+    *exp_out  = exp;
+    *mant_out = mant;
+}
+
+static inline void RPE_grid_positioning(s16 Mc,
+                                        register s16* xMp,
+                                        register s16* ep) {
+    int i = 13;
+    
+    switch (Mc) {
+        case 3: *ep++ = 0;
+        case 2: do {
+                        *ep++ = 0;
+        case 1:         *ep++ = 0;
+        case 0:         *ep++ = *xMp++;
+                } while (--i);
+    } 
+    while (++Mc < 4) *ep++ = 0;
+}
+
+void GAXSpeech_internal6(struct speech_state *S,
+                         s16 xmaxcr,
+                         s16 Mcr,
+                         s16* xMcr,
+                         s16* erp) {
+    s16 exp, mant;
+
+    APCM_quantization_xmaxc_to_exp_mant(xmaxcr, &exp, &mant);
+    GAXSpeech_internal5(xMcr, mant, exp, xMcr);
+    RPE_grid_positioning(Mcr, xMcr, erp);
 }
 
 void GAXSpeech_mix() {
@@ -179,8 +231,39 @@ void GAXSpeech_render() {
 }
 
 
-void SLTSF() {
-	
+// void SLTSF (Short/Long Term Synthesis Filtering)
+// accuracy -> 56.83% (down from 35.99%)
+
+void SLTSF(GAX_unk0* S, s16 Ncr, u16 bcr, s16* erp, s16* drp) {
+    s16 Nr;
+    s16 brp;
+    s16 *drp_nr;
+    u32 *dst, *src;
+    int k;
+
+    if ((u16)(Ncr - 40) > 80)
+        Nr = S->unk252;
+    else
+        Nr = Ncr;
+    S->unk252 = Nr;
+
+    brp = speech_QLB[bcr];
+
+    dst = (u32*)((u8*)drp - 0xf0);
+    src = (u32*)((u8*)drp - 0xa0);
+    drp_nr = drp - Nr;
+
+    for (k = 39; k >= 0; k--) {
+        s32 drpp = GSM_MULT_R(brp, *drp_nr++);
+        *drp++ = *erp++ + drpp;
+    }
+
+    for (k = 14; k >= 0; k--) {
+        *dst++ = *src++;
+        *dst++ = *src++;
+        *dst++ = *src++;
+        *dst++ = *src++;
+    }
 }
 
 // s16 speech_asl
