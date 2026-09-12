@@ -311,30 +311,34 @@ void GAXSpeech_render() {
 
 
 // void SLTSF (Short/Long Term Synthesis Filtering)
-// accuracy -> 56.83% (down from 35.99%)
+// https://decomp.me/scratch/f5qQF - Warm Mosquito (anon) (fork of pEtk7)
+// accuracy -> 64.88% (up from 35.99%)
 
 void SLTSF(GAX_unk0* S, s16 Ncr, u16 bcr, s16* erp, s16* drp) {
     s16 Nr;
     s16 brp;
     s16 *drp_nr;
+    s16 *dp;
     u32 *dst, *src;
     int k;
 
-    if ((u16)(Ncr - 40) > 80)
+    bcr = (u16)bcr;
+    Nr = Ncr - 40;
+    if ((u16)Nr > 80)
         Nr = S->unk252;
     else
         Nr = Ncr;
     S->unk252 = Nr;
 
     brp = speech_QLB[bcr];
-
     dst = (u32*)((u8*)drp - 0xf0);
     src = (u32*)((u8*)drp - 0xa0);
-    drp_nr = drp - Nr;
+    dp = drp;
+    drp_nr = dp - Nr;
 
     for (k = 39; k >= 0; k--) {
         s32 drpp = GSM_MULT_R(brp, *drp_nr++);
-        *drp++ = *erp++ + drpp;
+        *dp++ = *erp++ + drpp;
     }
 
     for (k = 14; k >= 0; k--) {
