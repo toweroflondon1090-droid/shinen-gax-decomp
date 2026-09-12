@@ -118,9 +118,88 @@ void GAXSpeech_internal1(s16* LARp) {
 
 }
 
-void GAXSpeech_internal3() {
-	
+// void GAXSpeech_internal3
+// https://decomp.me/scratch/ZH1H7 - Warm Mosquito (anon)
+// accuracy -> 99.91%
+
+#define SASR(x, by) ((x) >> (by))
+
+void GAXSpeech_internal3(struct speech_state* S, s16* LARc, s16* s, s8* d) {
+    s16 LARp[8];
+    s16* LARpp_j_1;
+    s16* s_27;
+    s16* s_40;
+    s16* s_13;
+    s8* d_27;
+    register s16* LARpp_j asm("sl");
+    register s8 *d_40;
+
+    LARpp_j_1 = S->LARpp[S->j];
+    LARpp_j = S->LARpp[S->j ^= 1];
+
+    GAXSpeech_internal0(LARc, LARpp_j_1);
+
+    // Coefficients 0..12
+    {
+        int i;
+        s16 *src1 = LARpp_j;
+        s16 *src2 = LARpp_j_1;
+        s16 *dst = LARp;
+        for (i = 7; i >= 0; i--, dst++, src1++, src2++) {
+            *dst = SASR(*src1, 2) + SASR(*src2, 2) + SASR(*src1, 1);
+        }
+    }
+    GAXSpeech_internal1(LARp);
+    S->filter(S, LARp, 13, s, d);
+
+    // Coefficients 13..26
+    {
+        int i;
+        s16 *src1 = LARpp_j;
+        s16 *src2 = LARpp_j_1;
+        s16 *dst = LARp;
+        register s8 *d_13;
+
+        s_13 = s + 13;
+        d_13 = d + 13;
+        s_27 = s + 27;
+        d_27 = d + 27;
+        s_40 = s_27 + 13;
+        d_40 = d + 40;
+
+        for (i = 7; i >= 0; i--, src1++, src2++, dst++) {
+            *dst = SASR(*src1, 1) + SASR(*src2, 1);
+        }
+        GAXSpeech_internal1(LARp);
+        S->filter(S, LARp, 14, s_13, d_13);
+    }
+
+    // Coefficients 27..39
+    {
+        int i;
+        s16 *src1 = LARpp_j;
+        s16 *src2 = LARpp_j_1;
+        s16 *dst = LARp;
+        for (i = 7; i >= 0; i--, src1++, src2++, dst++) {
+            *dst = SASR(*src1, 2) + SASR(*src2, 2) + SASR(*src2, 1);
+        }
+    }
+    GAXSpeech_internal1(LARp);
+    S->filter(S, LARp, 13, s_27, d_27);
+
+    // Coefficients 40..159
+    {
+        int i;
+        s16 *src1 = LARpp_j_1;
+        s16 *dst = LARp;
+        for (i = 7; i >= 0; i--, dst++, src1++) {
+            *dst = *src1;
+        }
+    }
+    GAXSpeech_internal1(LARp);
+    S->filter(S, LARp, 120, s_40, d_40);
 }
+
 
 // void GAXSpeech_internal5
 // https://decomp.me/scratch/0j2jj - beanieaxolotl
