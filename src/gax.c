@@ -17,8 +17,10 @@ extern u8 GAXOutput_filter_lowpass_asm_end[];
 extern u8 GAXOutput_render_asm[];
 extern u8 GAXOutput_render_asm_end[];
 extern u8 GAXTracker_asm[];
+extern u8 GAXTracker_asm_boost_patch[];
 extern u8 GAXTracker_asm_end[];
 extern u8 GAXTracker_pingpong_asm[];
+extern u8 GAXTracker_pingpong_asm_boost_patch[];
 extern u8 GAXTracker_pingpong_asm_end[];
 
 
@@ -281,50 +283,50 @@ void GAX2_init_soundhw() {
 }
 
 // void GAX2_init_volboost
-// https://decomp.me/scratch/qDGXO - beanieaxolotl
-// accuracy -> 38.09%
+// https://decomp.me/scratch/q8PC9 - Warm Mosquito (anon) (fork of qDGXO)
+// accuracy -> 93.32%
 
-void GAX2_init_volboost() {
-    
-    u16   volume;
-    void* tracker_asm;
-
-    int iVar1;
-    int iVar2;
-    u16 uVar3;
+void GAX2_init_volboost(void) {
+    u16 op2;
+    register u16 op1 asm("r6");
+    u8* p1;
+    u8* p2;
+    u16 volume;
 
     volume = GAX_ram->replayer[GAX_ram->mix_buffer_id]->song_2->volume;
-
-    if (volume >= 512) {
+    if (volume > 512) {
         GAX_ram->volboost_level = 2;
-        tracker_asm = GAX_ram->gax_tracker_asm;
-        *(u16*)(tracker_asm+0xD0) = 0x90AB;
-        *(u16*)(tracker_asm+0x54) = 0x90AB;
-        iVar2 = (int)tracker_asm + 0x54;
-        iVar1 = (int)tracker_asm + 0xD0;
-        uVar3 = 0xA0A8;        
+        p1 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_asm_boost_patch);
+        p2 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_pingpong_asm_boost_patch);
+        op1 = 0x90ab;
+        *(u16*)p2 = op1;
+        *(u16*)p1 = op1;
+        p1 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_asm_boost_patch);
+        p2 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_pingpong_asm_boost_patch);
+        op2 = 0xa0a8;
+    } else if (volume > 256) {
+        GAX_ram->volboost_level = 1;
+        p1 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_asm_boost_patch);
+        p2 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_pingpong_asm_boost_patch);
+        op1 = 0x912b;
+        *(u16*)p2 = op1;
+        *(u16*)p1 = op1;
+        p1 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_asm_boost_patch);
+        p2 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_pingpong_asm_boost_patch);
+        op2 = 0xa128;
     } else {
-        if (volume >= 256) {
-            GAX_ram->volboost_level = 1;
-            tracker_asm = GAX_ram->gax_tracker_asm;
-            *(u16*)(tracker_asm+0xD0) = 0x912B;
-            *(u16*)(tracker_asm+0x54) = 0x912B;
-            iVar2 = (int)tracker_asm + 0x54;
-            iVar1 = (int)tracker_asm + 0xD0; 
-            uVar3 = 0xA128;
-        } else {
-            GAX_ram->volboost_level = 0;
-            tracker_asm = GAX_ram->gax_tracker_asm;
-            *(u16*)(tracker_asm+0xD0) = 0x91AB;
-            *(u16*)(tracker_asm+0x54) = 0x91AB;
-            iVar2 = (int)tracker_asm + 0x54;
-            iVar1 = (int)tracker_asm + 0xD0; 
-            uVar3 = 0xA1A8;
-        }
+        GAX_ram->volboost_level = 0;
+        p1 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_asm_boost_patch);
+        p2 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_pingpong_asm_boost_patch);
+        op1 = 0x91ab;
+        *(u16*)p2 = op1;
+        *(u16*)p1 = op1;
+        p1 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_asm_boost_patch);
+        p2 = (u8*)GAX_ram->gax_tracker_asm - ((u8*)GAXTracker_asm - (u8*)GAXTracker_pingpong_asm_boost_patch);
+        op2 = 0xa1a8;
     }
-    *(u16*)(iVar1+4) = uVar3;
-    *(u16*)(iVar2+4) = uVar3;
-    
+    *(u16*)(p2 + 4) = op2;
+    *(u16*)(p1 + 4) = op2;
 }
 
 // void GAX_clear_mem
