@@ -395,8 +395,141 @@ void speech_create(GAX_unk0* speech_unk) {
     
 }
 
-void speech_decode() {
-	
+// s32 speech_decode
+// https://decomp.me/scratch/9OGGK - Warm Mosquito (anon) (fork of 05wDP)
+// accuracy -> 89.75% (up from 46.79%)
+
+s32 speech_decode(struct speech_state *s, u8* c, s32 target) {
+    s16 *drp, *erp, *wt;
+    s16 *xmaxc, *Mc, *xmc, *Nc, *bc;
+    int i, k;
+
+    if ((*c >> 4 & 0x0F) != GSM_MAGIC) return -1;
+
+    s->LARc[0]  = (*c++ & 0xF) << 2;
+    s->LARc[0] |= (*c >> 6) & 0x3;
+    s->LARc[1]  = *c++ & 0x3F;
+    s->LARc[2]  = (*c >> 3) & 0x1F;
+    s->LARc[3]  = (*c++ & 0x7) << 2;
+    s->LARc[3] |= (*c >> 6) & 0x3;
+    s->LARc[4]  = (*c >> 2) & 0xF;
+    s->LARc[5]  = (*c++ & 0x3) << 2;
+    s->LARc[5] |= (*c >> 6) & 0x3;
+    s->LARc[6]  = (*c >> 3) & 0x7;
+    s->LARc[7]  = *c++ & 0x7;
+    s->Nc[0]  = (*c >> 1) & 0x7F;
+    s->bc[0]  = (*c++ & 0x1) << 1;
+    s->bc[0] |= (*c >> 7) & 0x1;
+    s->Mc[0]  = (*c >> 5) & 0x3;
+    s->xmaxc[0]  = (*c++ & 0x1F) << 1;
+    s->xmaxc[0] |= (*c >> 7) & 0x1;
+    s->xmc[0]  = (*c >> 4) & 0x7;
+    s->xmc[1]  = (*c >> 1) & 0x7;
+    s->xmc[2]  = (*c++ & 0x1) << 2;
+    s->xmc[2] |= (*c >> 6) & 0x3;
+    s->xmc[3]  = (*c >> 3) & 0x7;
+    s->xmc[4]  = *c++ & 0x7;
+    s->xmc[5]  = (*c >> 5) & 0x7;
+    s->xmc[6]  = (*c >> 2) & 0x7;
+    s->xmc[7]  = (*c++ & 0x3) << 1;
+    s->xmc[7] |= (*c >> 7) & 0x1;
+    s->xmc[8]  = (*c >> 4) & 0x7;
+    s->xmc[9]  = (*c >> 1) & 0x7;
+    s->xmc[10]  = (*c++ & 0x1) << 2;
+    s->xmc[10] |= (*c >> 6) & 0x3;
+    s->xmc[11]  = (*c >> 3) & 0x7;
+    s->xmc[12]  = *c++ & 0x7;
+    s->Nc[1]  = (*c >> 1) & 0x7F;
+    s->bc[1]  = (*c++ & 0x1) << 1;
+    s->bc[1] |= (*c >> 7) & 0x1;
+    s->Mc[1]  = (*c >> 5) & 0x3;
+    s->xmaxc[1]  = (*c++ & 0x1F) << 1;
+    s->xmaxc[1] |= (*c >> 7) & 0x1;
+    s->xmc[13]  = (*c >> 4) & 0x7;
+    s->xmc[14]  = (*c >> 1) & 0x7;
+    s->xmc[15]  = (*c++ & 0x1) << 2;
+    s->xmc[15] |= (*c >> 6) & 0x3;
+    s->xmc[16]  = (*c >> 3) & 0x7;
+    s->xmc[17]  = *c++ & 0x7;
+    s->xmc[18]  = (*c >> 5) & 0x7;
+    s->xmc[19]  = (*c >> 2) & 0x7;
+    s->xmc[20]  = (*c++ & 0x3) << 1;
+    s->xmc[20] |= (*c >> 7) & 0x1;
+    s->xmc[21]  = (*c >> 4) & 0x7;
+    s->xmc[22]  = (*c >> 1) & 0x7;
+    s->xmc[23]  = (*c++ & 0x1) << 2;
+    s->xmc[23] |= (*c >> 6) & 0x3;
+    s->xmc[24]  = (*c >> 3) & 0x7;
+    s->xmc[25]  = *c++ & 0x7;
+    s->Nc[2]  = (*c >> 1) & 0x7F;
+    s->bc[2]  = (*c++ & 0x1) << 1;
+    s->bc[2] |= (*c >> 7) & 0x1;
+    s->Mc[2]  = (*c >> 5) & 0x3;
+    s->xmaxc[2]  = (*c++ & 0x1F) << 1;
+    s->xmaxc[2] |= (*c >> 7) & 0x1;
+    s->xmc[26]  = (*c >> 4) & 0x7;
+    s->xmc[27]  = (*c >> 1) & 0x7;
+    s->xmc[28]  = (*c++ & 0x1) << 2;
+    s->xmc[28] |= (*c >> 6) & 0x3;
+    s->xmc[29]  = (*c >> 3) & 0x7;
+    s->xmc[30]  = *c++ & 0x7;
+    s->xmc[31]  = (*c >> 5) & 0x7;
+    s->xmc[32]  = (*c >> 2) & 0x7;
+    s->xmc[33]  = (*c++ & 0x3) << 1;
+    s->xmc[33] |= (*c >> 7) & 0x1;
+    s->xmc[34]  = (*c >> 4) & 0x7;
+    s->xmc[35]  = (*c >> 1) & 0x7;
+    s->xmc[36]  = (*c++ & 0x1) << 2;
+    s->xmc[36] |= (*c >> 6) & 0x3;
+    s->xmc[37]  = (*c >> 3) & 0x7;
+    s->xmc[38]  = *c++ & 0x7;
+    s->Nc[3]  = (*c >> 1) & 0x7F;
+    s->bc[3]  = (*c++ & 0x1) << 1;
+    s->bc[3] |= (*c >> 7) & 0x1;
+    s->Mc[3]  = (*c >> 5) & 0x3;
+    s->xmaxc[3]  = (*c++ & 0x1F) << 1;
+    s->xmaxc[3] |= (*c >> 7) & 0x1;
+    s->xmc[39]  = (*c >> 4) & 0x7;
+    s->xmc[40]  = (*c >> 1) & 0x7;
+    s->xmc[41]  = (*c++ & 0x1) << 2;
+    s->xmc[41] |= (*c >> 6) & 0x3;
+    s->xmc[42]  = (*c >> 3) & 0x7;
+    s->xmc[43]  = *c++ & 0x7;
+    s->xmc[44]  = (*c >> 5) & 0x7;
+    s->xmc[45]  = (*c >> 2) & 0x7;
+    s->xmc[46]  = (*c++ & 0x3) << 1;
+    s->xmc[46] |= (*c >> 7) & 0x1;
+    s->xmc[47]  = (*c >> 4) & 0x7;
+    s->xmc[48]  = (*c >> 1) & 0x7;
+    s->xmc[49]  = (*c++ & 0x1) << 2;
+    s->xmc[49] |= (*c >> 6) & 0x3;
+    s->xmc[50]  = (*c >> 3) & 0x7;
+    s->xmc[51]  = *c & 0x7;
+
+    drp = s->drp;
+    erp = s->erp;
+    wt = s->wt;
+    xmaxc = s->xmaxc;
+    Mc = s->Mc;
+    xmc = s->xmc;
+    Nc = s->Nc;
+    bc = s->bc;
+
+    for (i = 0; i < 4; i++) {
+        GAXSpeech_internal6(s, *xmaxc++, *Mc++, xmc, erp);
+        s->SLTSF(s, *Nc++, *bc++, erp, drp);
+        {
+            s16 *w = &wt[i * 40];
+            s16 *d = drp;
+            for (k = 39; k >= 0; k--) {
+                *w++ = *d++;
+            }
+        }
+        xmc += 13;
+    }
+
+    GAXSpeech_internal3(s, s->LARc, wt, target);
+    return 0;
 }
 
 void STSF() {
