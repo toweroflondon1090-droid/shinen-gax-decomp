@@ -51,18 +51,18 @@ enum step_mask {
 
 #define GAX_ALLOC(sz) ({\
     u8 *out; \
-    u8 *scratchptr = GAX_ram->scratch_mem; \
+    u8 *scratchptr = (u8*)GAX_ram->unk80; \
     if ((u32)scratchptr & 3) { \
         u32 newsize = GAX_ALIGN(scratchptr, 4) - (u32)scratchptr; \
-        GAX_ram->scratch_mem = (u8 *)GAX_ALIGN(scratchptr, 4); \
-        GAX_ram->scratch_mem_size -= newsize; \
+        GAX_ram->unk80 = GAX_ALIGN(scratchptr, 4); \
+        GAX_ram->free_mem -= newsize; \
     } \
-    if ((GAX_ram->params->debug) && ((sz) > GAX_ram->scratch_mem_size)) { \
+    if ((GAX_ram->params->debug) && ((sz) > GAX_ram->free_mem)) { \
         GAX_ASSERT("GAX2_INIT", "OUT OF MEMORY"); \
     } \
-    GAX_ram->scratch_mem_size -= (sz); \
-    out = GAX_ram->scratch_mem; \
-    GAX_ram->scratch_mem += (sz); \
+    GAX_ram->free_mem -= (sz); \
+    out = (u8*)GAX_ram->unk80; \
+    GAX_ram->unk80 += (sz); \
     out; \
     })
 
