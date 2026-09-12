@@ -287,8 +287,39 @@ void GAXSpeech_internal6(struct speech_state *S,
     RPE_grid_positioning(Mcr, xMcr, erp);
 }
 
-void GAXSpeech_mix() {
-	
+// void GAXSpeech_mix
+// https://decomp.me/scratch/FWluT - Warm Mosquito (anon) (fork of 8e0R0)
+// accuracy -> 100.00% (score 0/2100)
+
+void GAXSpeech_mix(s16* out, s16* in, int count, int step) {
+    register int step_r6 asm("r6") = step;
+    register int clob_r4 asm("r4");
+    register int clob_r5 asm("r5");
+
+    __asm__ volatile (
+        "add r3, pc, #0\n\t"
+        "bx r3\n\t"
+        ".arm\n\t"
+        "mov r4, #0\n\t"
+        "1:\n\t"
+        "lsr r3, r4, #16\n\t"
+        "ldrsb r3, [r1, r3]\n\t"
+        "add r3, r3, #128\n\t"
+        "ldrh r5, [r0]\n\t"
+        "add r5, r5, r3, lsl #5\n\t"
+        "strh r5, [r0]\n\t"
+        "add r0, r0, #2\n\t"
+        "add r4, r4, r6\n\t"
+        "subs r2, r2, #1\n\t"
+        "bgt 1b\n\t"
+        "add r3, pc, #4\n\t"
+        "add r3, r3, #1\n\t"
+        "bx r3\n\t"
+        ".thumb\n\t"
+        : "+r" (out), "+r" (in), "+r" (count), "=r" (clob_r4), "=r" (clob_r5)
+        : "r" (step_r6)
+        : "r3"
+    );
 }
 
 // void GAXSpeech_open

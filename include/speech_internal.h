@@ -68,7 +68,7 @@ void GAXSpeech_internal1(s16* LARp);
 void GAXSpeech_internal3(struct speech_state* S, s16* LARc, s16* s, s8* d);
 void GAXSpeech_internal5(s16* xMc, s16 mant, s16 exp, s16* xMp);
 void GAXSpeech_internal6(struct speech_state *S, s16 xmaxcr, s16 Mcr, s16* xMcr, s16* erp);
-void GAXSpeech_mix();
+void GAXSpeech_mix(s16* out, s16* in, int count, int step);
 s16 speech_asl(s16 a, s32 n);
 void speech_create(GAX_unk0* speech_unk);
 s32 speech_decode(struct speech_state *s, u8* c, s32 target);
