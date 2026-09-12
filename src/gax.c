@@ -132,110 +132,106 @@ void GAX_open() {
 }
 
 // void GAX2_init_song
-// https://decomp.me/scratch/W9z6A - beanieaxolotl
-// accuracy -> 66.96%
+// https://decomp.me/scratch/RNeHU - Warm Mosquito (anon) (fork of lFWpi)
+// accuracy -> 74.75% (up from 62.95%)
 
 void GAX2_init_song(GAXSongData *song_data, vu16 *dmacnt, u16 dma_param1, u16 dma_param2) {
+    register GAXSongData* sd asm("r9") = song_data;
+    register u32 nch asm("r8") = song_data->num_channels;
 
-    // unidentified vars
-    int i;
-    u32 j;
-    GAX_player* f;
-    u32 uVar1;
-    int a;
-    u32* d;
-    u32* e;
-    int b;
+    int *end_addr_ptr;
+    int end_base;
+    u32 free_after_hdr;
+    u32 ch_bytes;
+    GAX_player *rp;
+    GAX_channel *ch;
+    int ch_id;
 
-    // identified vars
-    u32*         sync;
-    GAX_player*  replayer;
-    GAX_channel* ch;
-    u32*         alloc_size;
-    int          ch_id;
-    
-    u32  num_ch = song_data->num_channels;
-    
-    i = GAX_ram->unk80;
-    if ((i & 3) != 0) {
-        j = i + 4 & -32;
-        GAX_ram->unk80     = j;
-        GAX_ram->free_mem -= (j-i);
+    (void)dmacnt;
+    (void)dma_param1;
+    (void)dma_param2;
+
+    end_addr_ptr = &GAX_ram->end_addr_1;
+    end_base = *end_addr_ptr;
+    if (end_base & 3) {
+        int aligned0 = (end_base + 4) & ~3;
+        *end_addr_ptr = aligned0;
+        GAX_ram->free_mem -= (aligned0 - end_base);
     }
 
-    if (GAX_ram->params->debug && GAX_ram->free_mem < 0x4C) {
-        GAX_ASSERT("GAX2_INIT","OUT OF MEMORY");
-    }
-
-    
-    alloc_size = &GAX_ram->free_mem;
-    uVar1 = *alloc_size;
-    *alloc_size = uVar1 - 0x4C;
-    
-    sync = &GAX_ram->unk80;
-    replayer = (GAX_player*)*sync;
-    f = replayer + 1;
-    *sync = (u32)f;
-    GAX_ram->replayer[GAX_ram->mix_buffer_id] = replayer;
-
-    if ((u32)f & 3 != 0) {
-        j = (u32)&replayer + 4 & -32;
-        *sync = j;
-        *alloc_size = (uVar1 - 0x4c) - (j - (int)f);
-    }
-    
-    if (GAX_ram->params->debug && 
-        (GAX_ram->free_mem <= num_ch*72) && (num_ch*72 - GAX_ram->free_mem)) {
-        GAX_ASSERT("GAX2_INIT","OUT OF MEMORY");
-    }
-
-    GAX_ram->free_mem += num_ch * -0x48;
-    ch = (GAX_channel*)GAX_ram->unk80;
-    GAX_ram->unk80 = (u32)(ch + num_ch);
-    
-    replayer = GAX_ram->replayer[GAX_ram->mix_buffer_id];
-    replayer->channels = ch;
-    replayer->song_2 = song_data;
-
-    if (num_ch != 0) {
-        //a = 0;
-        for (ch_id = 0; ch_id <= num_ch; ch_id++) {
-            // iterate over every channel and assign them a unique number
-            (&GAX_ram->replayer[GAX_ram->mix_buffer_id]->channels->channel_index)[a] = (s8)ch_id;
-            a += 0x48;
+#if DEBUG > 0
+    if (GAX_ram->params->debug) {
+        if (0x4C > GAX_ram->free_mem) {
+            GAX_ASSERT("GAX2_INIT", "OUT OF MEMORY");
         }
+    }
+#endif
+
+    GAX_ram->free_mem -= 0x4C;
+    free_after_hdr = GAX_ram->free_mem;
+
+    end_base = GAX_ram->end_addr_1;
+    rp = (GAX_player *)end_base;
+    GAX_ram->end_addr_1 = end_base + 0x4C;
+
+    *(GAX_player **)((u8 *)&GAX_ram->replayer + (GAX_ram->mix_buffer_id << 2)) = rp;
+
+    if ((end_base + 0x4C) & 3) {
+        u32 aligned1 = (end_base + 0x50) & ~3;
+        GAX_ram->end_addr_1 = aligned1;
+        GAX_ram->free_mem = free_after_hdr - (aligned1 - (end_base + 0x4C));
+    }
+
+    ch_bytes = nch * 0x48;
+
+#if DEBUG > 0
+    if (GAX_ram->params->debug) {
+        if (ch_bytes > GAX_ram->free_mem) {
+            GAX_ASSERT("GAX2_INIT", "OUT OF MEMORY");
+        }
+    }
+#endif
+
+    GAX_ram->free_mem -= ch_bytes;
+    end_base = GAX_ram->end_addr_1;
+    GAX_ram->end_addr_1 = end_base + ch_bytes;
+
+    rp = *(GAX_player **)((u8 *)&GAX_ram->replayer + (GAX_ram->mix_buffer_id << 2));
+    ch = (GAX_channel *)end_base;
+    rp->channels = ch;
+    rp->song_2 = sd;
+
+    for (ch_id = 0; ch_id < (int)nch; ch_id++) {
+        GAX_channel *c = (*(GAX_player **)((u8 *)&GAX_ram->replayer + (GAX_ram->mix_buffer_id << 2)))->channels;
+        ((s8 *)((u8 *)c + ch_id * 0x48))[0x0D] = (s8)ch_id;
     }
 
     if (GAX_ram->unk5C != 0) {
-        
-        a = 0;
-        *(u32*)GAX_ram->replayer[GAX_ram->mix_buffer_id]->unk28 = 
-          *(u32*)(&song_data[1].step_count + 1);
-        
-        d = (u32*)(&song_data[1].instrument_data + 3);
-        e = (u32*)(&song_data[1].restart_position + 1);
-        
-        for (ch_id = 0; ch_id < 3; ch_id++) {
-            
-            replayer = GAX_ram->replayer[GAX_ram->mix_buffer_id];
-            b = ((u32)GAX_ram->buf_header_dma1->mixrate * *e) / 1000;
-            
-            *(u32*)(replayer->unk28 + ch_id * 4 + 4) = b << 1;
-            *(u32*)(GAX_ram->replayer[GAX_ram->mix_buffer_id]->unk28 + ch_id * 4 + 16) = *d;
+        u32 sum = 0;
+        u32 *src_d;
+        u32 *src_e;
 
-            b = *d;
-            d++;
-            a += b;
-            e++;
-            
+        *(u32 *)((u8 *)*(GAX_player **)((u8 *)&GAX_ram->replayer + (GAX_ram->mix_buffer_id << 2)) + 0x28) = *(u32 *)((u8 *)sd + 0xA0);
+
+        ch_id = 0;
+        src_d = (u32 *)((u8 *)sd + 0xB0);
+        src_e = (u32 *)((u8 *)sd + 0xA4);
+
+        for (; ch_id < 3; ch_id++) {
+            GAX_player *p = *(GAX_player **)((u8 *)&GAX_ram->replayer + (GAX_ram->mix_buffer_id << 2));
+            u32 *dest = (u32 *)((u8 *)p + 0x2C + ch_id * 4);
+            u32 rate = GAX_ram->buf_header_dma1->mixrate;
+            u32 b = (rate * (*src_e++)) / 1000;
+
+            *dest = b << 1;
+            *(u32 *)((u8 *)*(GAX_player **)((u8 *)&GAX_ram->replayer + (GAX_ram->mix_buffer_id << 2)) + 0x38 + ch_id * 4) = *src_d;
+            sum += *src_d++;
         }
 
-        *(u32*)(GAX_ram->replayer[GAX_ram->mix_buffer_id]->unk28 + 0x1C) = a;
-        
+        *(u32 *)((u8 *)*(GAX_player **)((u8 *)&GAX_ram->replayer + (GAX_ram->mix_buffer_id << 2)) + 0x44) = sum;
     }
 
     GAX2_init_volboost();
-    
 }
 
 // void GAX2_init_soundhw
