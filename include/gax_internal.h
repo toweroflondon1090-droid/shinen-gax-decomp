@@ -405,3 +405,6 @@ typedef struct unknownArgs {
     u32  dc_thing3;
 
 } unknownArgs;
+
+extern void GAX_umull(void);
+extern u32 _call_via_r3();
