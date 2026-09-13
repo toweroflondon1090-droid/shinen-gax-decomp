@@ -850,51 +850,48 @@ void GAX2_calc_mem(GAXParams* params) {
 }
 
 // u32 GAX2_fx
-// https://decomp.me/scratch/krNc3 - beanieaxolotl, christianttt
-// accuracy -> 99.04%
-// ======================
-// edits by beanieaxolotl
+// https://decomp.me/scratch/FO1sa - Warm Mosquito (anon)
+// accuracy -> 100.00% MATCH!
 
- u32 GAX2_fx(const GAXFXParams* fxparams) {
-
-    u16 sfx_id_holder;
-    s32 fxch_arg;
+u32 GAX2_fx(const GAXFXParams* fxparams) {
+    register const GAXFXParams* params asm("r4") = fxparams;
+    register u32 sfx_id_holder asm("r1");
+    register s32 fxch_arg asm("r12");
     s32 prio_arg;
     s32 note_arg;
-    s32 final_volume;
+    register s32 final_volume asm("r5");
     u32 channel_id;
     u32 temp_read_val;
 
-    if (fxparams == NULL) {
-        GAX_ASSERT("GAX2_FX","FXPARAMS_ARG IS NULL");
+    if (params == NULL) {
+        GAX_ASSERT((const char*)0x0815B940, (const char*)0x0815B7C8);
         return -1;
     }
 
-    if (fxparams->fxid == 0xFFFF) {
-        GAX_ASSERT("GAX2_FX","FXPARAMS->FXID IS GAX_DEFAULT");
+    if (params->fxid == 0xFFFF) {
+        GAX_ASSERT((const char*)0x0815B940, (const char*)0x0815B948);
     }
     
-    sfx_id_holder = fxparams->fxid;
-    temp_read_val = fxparams->fxch;
+    sfx_id_holder = params->fxid;
+    temp_read_val = params->fxch;
     fxch_arg = -1;
     
     if (temp_read_val != 0xFFFF) {
         fxch_arg = temp_read_val;
     }
 
-    temp_read_val = fxparams->prio;
+    temp_read_val = params->prio;
     prio_arg = (temp_read_val != (u32)-1) ? temp_read_val : 0x7FFFFFFF;
 
-    
-    temp_read_val = fxparams->note;
+    temp_read_val = params->note;
     note_arg = -1;
     
     if (temp_read_val != (u32)-1) {
         note_arg = temp_read_val;
     }
 
+    temp_read_val = params->volume;
     final_volume = 255;
-    temp_read_val = fxparams->volume;
     if (temp_read_val != 0xFFFF) {
         final_volume = temp_read_val;
     }
@@ -912,7 +909,6 @@ void GAX2_calc_mem(GAXParams* params) {
     ((GAX_FX_channel*)(((u8**)GAX_ram)[3]))[channel_id].fxvol = (u8)final_volume;
 
     return channel_id;
-
 }
 
 
